@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>DyNet Remote — חיבור Dropbox</title>
+<style>
+  :root{ --bg:#0f1115; --surface:#1a1d24; --line:#2a2f3a; --text:#e7e9ee; --muted:#9aa3b2; --accent:#f5a623; --ok:#35c46b; --err:#ff6b6b; }
+  *{ box-sizing:border-box; }
+  body{ margin:0; min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px;
+        background:var(--bg); color:var(--text); font:16px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif; }
+  .card{ width:100%; max-width:440px; background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:24px; text-align:center; }
+  h1{ font-size:19px; margin:0 0 6px; }
+  p{ color:var(--muted); margin:8px 0; }
+  .big{ font-size:15px; color:var(--text); }
+  a.btn,button.btn{ display:inline-block; margin-top:14px; padding:12px 20px; border-radius:12px; border:0;
+        background:var(--accent); color:#1a1205; font-weight:700; font-size:16px; text-decoration:none; cursor:pointer; }
+  .codebox{ margin-top:16px; display:none; }
+  .code{ user-select:all; word-break:break-all; background:#0c0e12; border:1px solid var(--line); border-radius:10px;
+        padding:12px; font:13px/1.4 ui-monospace,Menlo,Consolas,monospace; color:var(--accent); }
+  .copy{ margin-top:10px; background:var(--line); color:var(--text); }
+  .state{ font-size:34px; margin-bottom:4px; }
+  .err{ color:var(--err); }
+  .muted{ color:var(--muted); font-size:13px; }
+</style>
+</head>
+<body>
+<div class="card" id="card">
+  <div class="state" id="icon">🔗</div>
+  <h1 id="title">מחבר ל-DyNet Remote…</h1>
+  <p id="msg" class="big">רגע, מעביר את ההתחברות לאפליקציה.</p>
+  <a class="btn" id="openApp" style="display:none">פתח את DyNet Remote</a>
+  <div class="codebox" id="codebox">
+    <p class="muted">אם האפליקציה לא נפתחה אוטומטית — העתק את הקוד והדבק אותו באפליקציה:</p>
+    <div class="code" id="code"></div>
+    <button class="btn copy" id="copy">העתק קוד</button>
+  </div>
+</div>
+<script>
+(function(){
+  // Dropbox may return the code in the query string (?code=) or, on some flows, the fragment (#code=).
+  function param(name){
+    var q = new URLSearchParams(location.search).get(name);
+    if(q) return q;
+    if(location.hash){ return new URLSearchParams(location.hash.replace(/^#/,'')).get(name); }
+    return null;
+  }
+  var code = param('code');
+  var error = param('error_description') || param('error');
+  var icon = document.getElementById('icon'), title = document.getElementById('title'),
+      msg = document.getElementById('msg'), codebox = document.getElementById('codebox'),
+      codeEl = document.getElementById('code'), openApp = document.getElementById('openApp');
+
+  if(error){
+    icon.textContent = '⚠️'; title.textContent = 'ההתחברות בוטלה'; title.className='err';
+    msg.textContent = error;
+    return;
+  }
+  if(!code){
+    icon.textContent = 'ℹ️'; title.textContent = 'דף חיבור Dropbox';
+    msg.textContent = 'פתח את החיבור מתוך אפליקציית DyNet Remote.';
+    return;
+  }
+
+  var deep = 'dynetremote://auth?code=' + encodeURIComponent(code);
+  // Hand the code back to the app.
+  location.href = deep;
+  openApp.href = deep;
+
+  // After a moment, show the success state + a manual button + the code as a fallback.
+  setTimeout(function(){
+    icon.textContent = '✅'; title.textContent = 'התחברת ל-Dropbox';
+    msg.textContent = 'אפשר לחזור לאפליקציה.';
+    openApp.style.display = 'inline-block';
+    codeEl.textContent = code;
+    codebox.style.display = 'block';
+  }, 1200);
+
+  document.getElementById('copy').onclick = function(){
+    navigator.clipboard && navigator.clipboard.writeText(code);
+    this.textContent = 'הועתק ✓';
+  };
+})();
+</script>
+</body>
+</html>
